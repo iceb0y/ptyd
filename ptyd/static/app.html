@@ -8,8 +8,16 @@
   <body>
     <div id="terminal"></div>
     <script>
+      var l = window.location;
+      var ws = new WebSocket(((l.protocol === "https:") ? "wss://" : "ws://") + l.host + '/pty');
       var term = new Terminal();
       term.open(document.getElementById('terminal'));
+      ws.onmessage = function(e) {
+        term.write(e.data);
+      }
+      term.on('data', function(data) {
+        ws.send(data);
+      });
     </script>
   </body>
 </html>

@@ -1,13 +1,16 @@
 from asyncio import get_event_loop
 from functools import partial
-from os import close, kill, execv, forkpty, read
+from os import close, kill, execv, forkpty, path, read
 from sanic import Sanic
 from sanic.response import text
 from signal import SIGTERM
 
+static_dir = path.join(path.dirname(__file__), 'static')
 app = Sanic()
+app.static('', static_dir)
+app.static('', path.join(static_dir, 'app.html'))
 
-@app.route("/")
+@app.route('hello')
 async def hello(request):
     loop = get_event_loop()
     pid, fd = forkpty()
@@ -15,7 +18,7 @@ async def hello(request):
         execv('/bin/bash', ['bunny'])
     loop.add_reader(fd, partial(on_read, loop, fd))
     loop.call_later(1, partial(kill, pid, SIGTERM))
-    return text("Hello world!")
+    return text('Hello world!')
 
 def on_read(loop, fd):
     try:

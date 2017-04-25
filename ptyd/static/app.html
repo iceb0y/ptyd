@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+    <link rel="stylesheet" href="xterm.css" />
+    <script src="xterm.js"></script>
+    <title>ptyd</title>
+  </head>
+  <body>
+    <div id="terminal"></div>
+    <script>
+      var term = new Terminal();
+      term.open(document.getElementById('terminal'));
+    </script>
+  </body>
+</html>

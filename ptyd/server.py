@@ -34,11 +34,11 @@ async def pty(_, ws):
     fd_to_ws_task = loop.create_task(fd_to_ws(fd, ws))
     ws_to_fd_task = loop.create_task(ws_to_fd(ws, fd))
     try:
-        done, pending = await wait([fd_to_ws_task, ws_to_fd_task],
-                                   return_when=FIRST_COMPLETED)
-        await gather(*done)
+        _, pending = await wait([fd_to_ws_task, ws_to_fd_task],
+                                return_when=FIRST_COMPLETED)
         for task in pending:
             task.cancel()
+        await gather(fd_to_ws_task, ws_to_fd_task)
     except ConnectionClosed:
         kill(pid, SIGHUP)
     finally:

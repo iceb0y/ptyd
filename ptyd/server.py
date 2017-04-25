@@ -17,11 +17,11 @@ def prepare(_, loop):
     loop.add_signal_handler(SIGCHLD, sigchld)
 
 def sigchld():
-    while True:
-        try:
-            waitpid(-1, WNOHANG)
-        except ChildProcessError:
-            return
+    try:
+        while waitpid(-1, WNOHANG)[0]:
+            pass
+    except ChildProcessError:
+        pass
 
 @app.websocket('pty')
 async def pty(_, ws):

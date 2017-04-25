@@ -1,7 +1,8 @@
-from asyncio import get_event_loop, wait, FIRST_COMPLETED
-from os import close, execvp, forkpty, path, read, write, waitpid, WNOHANG
+from asyncio import gather, get_event_loop, wait, FIRST_COMPLETED
+from os import close, kill, execvp, forkpty, path, read, write, waitpid, WNOHANG
 from sanic import Sanic
-from signal import SIGCHLD
+from sanic.websocket import ConnectionClosed
+from signal import SIGCHLD, SIGHUP
 from sys import argv, exit
 
 if not argv[1:]:
@@ -33,12 +34,14 @@ async def pty(_, ws):
     fd_to_ws_task = loop.create_task(fd_to_ws(fd, ws))
     ws_to_fd_task = loop.create_task(ws_to_fd(ws, fd))
     try:
-        await wait([fd_to_ws_task, ws_to_fd_task], return_when=FIRST_COMPLETED)
+        done, pending = await wait([fd_to_ws_task, ws_to_fd_task],
+                                   return_when=FIRST_COMPLETED)
+        await gather(*done)
+        for task in pending:
+            task.cancel()
+    except ConnectionClosed:
+        kill(pid, SIGHUP)
     finally:
-        if not fd_to_ws_task.done():
-            fd_to_ws_task.cancel()
-        if not ws_to_fd_task.done():
-            ws_to_fd_task.cancel()
         close(fd)
 
 async def fd_to_ws(fd, ws):
